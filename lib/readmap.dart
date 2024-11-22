@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
 class Readmap extends StatefulWidget {
@@ -11,7 +12,7 @@ class Readmap extends StatefulWidget {
 class _ReadmapState extends State<Readmap> {
   String? _latitude;
   String? _longitude;
-  // String? _address;
+  String? _address;
   bool _isLoading = false;
 
   //mendapatkan lokasi
@@ -39,6 +40,9 @@ class _ReadmapState extends State<Readmap> {
           locationSettings:
               const LocationSettings(accuracy: LocationAccuracy.high));
 
+      //mendapatkan alamt dari koordinat
+      await _getAddress(position);
+
       setState(() {
         _latitude = position.latitude.toString();
         _longitude = position.longitude.toString();
@@ -51,6 +55,23 @@ class _ReadmapState extends State<Readmap> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  //mendapatkan alamat berdasarkan koordinat
+  Future<void> _getAddress(Position position) async {
+    try {
+      List<Placemark> placemark =
+          await placemarkFromCoordinates(position.latitude, position.longitude);
+      Placemark place = placemark.first;
+      setState(() {
+        _address =
+            '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}';
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Gagal Mendapatkan Alamat: $e"),
+      ));
     }
   }
 
@@ -72,6 +93,7 @@ class _ReadmapState extends State<Readmap> {
                 children: [
                   Text('Latitude: $_latitude'),
                   Text('Longitude: $_longitude'),
+                  if (_address != null) Text('Alamat: $_address')
                 ],
               ),
             ElevatedButton(
